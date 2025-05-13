@@ -1,0 +1,328 @@
+openapi: 3.0.0
+info:
+  title: User Management API
+  description: API for managing users, authentication, and history.
+  version: 1.0.0
+servers:
+  - url: https://node35.webte.fei.stuba.sk/pdf_app/backend/api/v0
+paths:
+  /user/{user_id}:
+    get:
+      summary: Get user data
+      tags:
+        - User Management
+      description: Retrieves user data by ID.
+      parameters:
+        - name: user_id
+          in: path
+          description: ID of the user to retrieve
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /history:
+    get:
+      summary: Get user history
+      tags:
+        - User Management
+      description: Retrieves user activity history with optional filters.
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of history entries to return
+          schema:
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Offset for pagination
+          schema:
+            type: integer
+            default: 0
+        - name: user_id
+          in: query
+          description: Filter history by user ID
+          schema:
+            type: integer
+            format: int64
+        - name: action
+          in: query
+          description: Filter history by action type
+          schema:
+            type: string
+        - name: access_type
+          in: query
+          description: Filter history by access type (e.g., 'api', 'frontend')
+          schema:
+            type: string
+        - name: date_from
+          in: query
+          description: Filter history by date from (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: Filter history by date to (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HistoryEntry'
+  /login:
+    post:
+      summary: User login
+      tags:
+        - User Authentication
+      description: Authenticates a user and returns a session token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Missing username or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /register:
+    post:
+      summary: User registration
+      tags:
+        - User Authentication
+      description: Registers a new user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          description: Missing required data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: User with this email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /logout:
+    post:
+      summary: User logout
+      tags:
+        - User Authentication
+      description: Logs out the user by invalidating the session.
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: User not logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /regenerate-api-key:
+    post:
+      summary: Regenerate API key
+      tags:
+        - User Authentication
+      description: Regenerates the API key for a user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegenerateApiKeyRequest'
+      responses:
+        '200':
+          description: API key regenerated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegenerateApiKeyResponse'
+        '400':
+          description: Missing user ID or failed to regenerate key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: User ID
+        username:
+          type: string
+          description: Username
+        email:
+          type: string
+          format: email
+          description: User email address
+        role:
+          type: string
+          description: User role
+        created_at:
+          type: string
+          format: date-time
+          description: User creation timestamp
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+        - access_type
+      properties:
+        username:
+          type: string
+          description: Username
+        password:
+          type: string
+          description: Password
+    LoginResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          description: Username
+        email:
+          type: string
+          format: email
+          description: Email address
+        password:
+          type: string
+          description: Password
+    RegisterResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Registration success message
+        user:
+          $ref: '#/components/schemas/User'
+        api_key:
+          type: string
+          description: Api key for user
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Generic message
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+    HistoryEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Log entry ID
+        username:
+          type: string
+          description: Username of the user
+        user_id:
+          type: integer
+          format: int64
+          description: User ID
+        action:
+          type: string
+          description: Action performed
+        details:
+          type: string
+          description: Action details
+        ip_address:
+          type: string
+          description: IP address
+        city:
+          type: string
+          description: City
+        country:
+          type: string
+          description: Country
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp
+    RegenerateApiKeyRequest:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: integer
+          description: The ID of the user whose API key needs to be regenerated.
+    RegenerateApiKeyResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message indicating API key regeneration status.
+        api_key:
+          type: string
+          description: The newly generated API key.

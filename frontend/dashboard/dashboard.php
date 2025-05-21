@@ -161,7 +161,7 @@ $strings = [
 
 
                 <li class="nav-item" style="margin-left: 1.5em">
-                    <form action="backend/user_logout.php" method="post">
+                    <form action="backend/api/logout.php" method="post">
                         <button type="submit" class="btn btn-outline-danger"><?php echo $strings[$lang]['logout_nav_button']; ?></button>
                     </form>
                 </li>
